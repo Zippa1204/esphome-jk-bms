@@ -10,24 +10,24 @@ void JkNumber::dump_config() { LOG_NUMBER("", "JkBmsBle Number", this); }
 void JkNumber::control(float value) {
   if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK04 && this->jk04_holding_register_) {
     uint32_t payload = (uint32_t) (value * this->factor_);
-    if (this->parent_->write_register(this->jk04_holding_register_, payload, sizeof(payload))) {
-      this->publish_state(state);
+    if (this->parent_->write_register(this->jk04_holding_register_, payload, this->length_)) {
+      this->publish_state(value);
     }
     return;
   }
 
-  if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK02 && this->jk02_holding_register_) {
+  if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK02_24S && this->jk02_holding_register_) {
     uint32_t payload = (uint32_t) (value * this->factor_);
-    if (this->parent_->write_register(this->jk02_holding_register_, payload, sizeof(payload))) {
-      this->publish_state(state);
+    if (this->parent_->write_register(this->jk02_holding_register_, payload, this->length_)) {
+      this->publish_state(value);
     }
     return;
   }
 
   if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK02_32S && this->jk02_32s_holding_register_) {
     uint32_t payload = (uint32_t) (value * this->factor_);
-    if (this->parent_->write_register(this->jk02_32s_holding_register_, payload, sizeof(payload))) {
-      this->publish_state(state);
+    if (this->parent_->write_register(this->jk02_32s_holding_register_, payload, this->length_)) {
+      this->publish_state(value);
     }
     return;
   }

@@ -1,14 +1,15 @@
 substitutions:
   name: jk-bms
   device_description: "Occupy the BLE module of the BMS to prevent advertising and block connections from foreign devices"
-  mac_address: C8:47:8C:E1:E2:E1
+  mac_address: C8:47:8C:E1:E2:AA
 
 esphome:
   name: ${name}
   comment: ${device_description}
+  min_version: 2024.6.0
   project:
     name: "syssi.esphome-jk-bms"
-    version: 1.5.0
+    version: 2.1.0
 
 esp32:
   board: wemos_d1_mini32
@@ -20,6 +21,12 @@ wifi:
   password: !secret wifi_password
 
 ota:
+  platform: esphome
+  on_begin:
+    then:
+      - switch.turn_off: ble_client_switch0
+      - logger.log: "BLE connection suspended for OTA update"
+
 logger:
 
 # If you don't use Home Assistant please remove this `api` section and uncomment the `mqtt` component!
@@ -43,4 +50,5 @@ ble_client:
 switch:
   - platform: ble_client
     ble_client_id: client0
+    id: ble_client_switch0
     name: "${name} enable bluetooth connection"

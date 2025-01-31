@@ -23,9 +23,10 @@ from esphome.const import (
     UNIT_WATT,
 )
 
-from . import CONF_JK_BMS_BLE_ID, JkBmsBle
+from . import CONF_JK_BMS_BLE_ID, JK_BMS_BLE_COMPONENT_SCHEMA
+from .const import CONF_BALANCING
 
-CODEOWNERS = ["@syssi"]
+CODEOWNERS = ["@syssi", "@txubelaxu"]
 
 CONF_MIN_CELL_VOLTAGE = "min_cell_voltage"
 CONF_MAX_CELL_VOLTAGE = "max_cell_voltage"
@@ -89,6 +90,9 @@ CONF_CHARGING_POWER = "charging_power"
 CONF_DISCHARGING_POWER = "discharging_power"
 CONF_TEMPERATURE_SENSOR_1 = "temperature_sensor_1"
 CONF_TEMPERATURE_SENSOR_2 = "temperature_sensor_2"
+CONF_TEMPERATURE_SENSOR_3 = "temperature_sensor_3"
+CONF_TEMPERATURE_SENSOR_4 = "temperature_sensor_4"
+CONF_TEMPERATURE_SENSOR_5 = "temperature_sensor_5"
 CONF_POWER_TUBE_TEMPERATURE = "power_tube_temperature"
 CONF_STATE_OF_CHARGE = "state_of_charge"
 CONF_CAPACITY_REMAINING = "capacity_remaining"
@@ -98,6 +102,9 @@ CONF_TOTAL_CHARGING_CYCLE_CAPACITY = "total_charging_cycle_capacity"
 CONF_TOTAL_RUNTIME = "total_runtime"
 CONF_BALANCING_CURRENT = "balancing_current"
 CONF_ERRORS_BITMASK = "errors_bitmask"
+CONF_EMERGENCY_TIME_COUNTDOWN = "emergency_time_countdown"
+CONF_HEATING_CURRENT = "heating_current"
+
 
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_OHM = "Ω"
@@ -111,6 +118,7 @@ ICON_CAPACITY_REMAINING = "mdi:battery-50"
 ICON_CHARGING_CYCLES = "mdi:battery-sync"
 ICON_ERRORS_BITMASK = "mdi:alert-circle-outline"
 ICON_CELL_RESISTANCE = "mdi:omega"
+ICON_BALANCER = "mdi:seesaw"
 
 CELL_VOLTAGES = [
     CONF_CELL_VOLTAGE_1,
@@ -166,7 +174,16 @@ CELL_RESISTANCES = [
     CONF_CELL_RESISTANCE_24,
 ]
 
+TEMPERATURES = [
+    CONF_TEMPERATURE_SENSOR_1,
+    CONF_TEMPERATURE_SENSOR_2,
+    CONF_TEMPERATURE_SENSOR_3,
+    CONF_TEMPERATURE_SENSOR_4,
+    CONF_TEMPERATURE_SENSOR_5,
+]
+
 SENSORS = [
+    CONF_BALANCING,
     CONF_MIN_CELL_VOLTAGE,
     CONF_MAX_CELL_VOLTAGE,
     CONF_MIN_VOLTAGE_CELL,
@@ -178,8 +195,6 @@ SENSORS = [
     CONF_POWER,
     CONF_CHARGING_POWER,
     CONF_DISCHARGING_POWER,
-    CONF_TEMPERATURE_SENSOR_1,
-    CONF_TEMPERATURE_SENSOR_2,
     CONF_POWER_TUBE_TEMPERATURE,
     CONF_STATE_OF_CHARGE,
     CONF_CAPACITY_REMAINING,
@@ -189,12 +204,20 @@ SENSORS = [
     CONF_TOTAL_RUNTIME,
     CONF_BALANCING_CURRENT,
     CONF_ERRORS_BITMASK,
+    CONF_EMERGENCY_TIME_COUNTDOWN,
+    CONF_HEATING_CURRENT,
 ]
 
 # pylint: disable=too-many-function-args
-CONFIG_SCHEMA = cv.Schema(
+CONFIG_SCHEMA = JK_BMS_BLE_COMPONENT_SCHEMA.extend(
     {
-        cv.GenerateID(CONF_JK_BMS_BLE_ID): cv.use_id(JkBmsBle),
+        cv.Optional(CONF_BALANCING): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            icon=ICON_BALANCER,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
         cv.Optional(CONF_MIN_CELL_VOLTAGE): sensor.sensor_schema(
             unit_of_measurement=UNIT_VOLT,
             icon=ICON_EMPTY,
@@ -622,6 +645,27 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        cv.Optional(CONF_TEMPERATURE_SENSOR_3): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            icon=ICON_EMPTY,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_TEMPERATURE_SENSOR_4): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            icon=ICON_EMPTY,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_TEMPERATURE_SENSOR_5): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            icon=ICON_EMPTY,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
         cv.Optional(CONF_POWER_TUBE_TEMPERATURE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             icon=ICON_EMPTY,
@@ -684,6 +728,19 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        cv.Optional(CONF_EMERGENCY_TIME_COUNTDOWN): sensor.sensor_schema(
+            unit_of_measurement=UNIT_SECONDS,
+            icon=ICON_TIMELAPSE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+        ),
+        cv.Optional(CONF_HEATING_CURRENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            icon=ICON_CURRENT_DC,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
     }
 )
 
@@ -700,6 +757,11 @@ async def to_code(config):
             conf = config[key]
             sens = await sensor.new_sensor(conf)
             cg.add(hub.set_cell_resistance_sensor(i, sens))
+    for i, key in enumerate(TEMPERATURES):
+        if key in config:
+            conf = config[key]
+            sens = await sensor.new_sensor(conf)
+            cg.add(hub.set_temperature_sensor(i, sens))
     for key in SENSORS:
         if key in config:
             conf = config[key]

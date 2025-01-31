@@ -16,7 +16,7 @@ void JkSwitch::write_state(bool state) {
     return;
   }
 
-  if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK02 && this->jk02_holding_register_) {
+  if (this->parent_->get_protocol_version() == PROTOCOL_VERSION_JK02_24S && this->jk02_holding_register_) {
     if (this->parent_->write_register(this->jk02_holding_register_, (state) ? 0x00000001 : 0x00000000, 0x04)) {
       this->publish_state(state);
     }
@@ -32,8 +32,6 @@ void JkSwitch::write_state(bool state) {
 
   ESP_LOGE(TAG, "This switch isn't supported by the selected protocol version");
 }
-
-bool JkSwitch::assumed_state() { return (this->jk02_32s_holding_register_ == 0x6B); }
 
 }  // namespace jk_bms_ble
 }  // namespace esphome

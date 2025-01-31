@@ -3,30 +3,30 @@ from esphome.components import binary_sensor
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, DEVICE_CLASS_CONNECTIVITY, ENTITY_CATEGORY_DIAGNOSTIC
 
-from . import CONF_JK_BMS_BLE_ID, JkBmsBle
-from .const import CONF_CHARGING, CONF_DISCHARGING
+from . import CONF_JK_BMS_BLE_ID, JK_BMS_BLE_COMPONENT_SCHEMA
+from .const import CONF_BALANCING, CONF_CHARGING, CONF_DISCHARGING, CONF_HEATING
 
 DEPENDENCIES = ["jk_bms_ble"]
 
-CODEOWNERS = ["@syssi"]
+CODEOWNERS = ["@syssi", "@txubelaxu"]
 
-CONF_BALANCING = "balancing"
 CONF_ONLINE_STATUS = "online_status"
 
 ICON_CHARGING = "mdi:battery-charging"
 ICON_DISCHARGING = "mdi:power-plug"
 ICON_BALANCING = "mdi:battery-heart-variant"
+ICON_HEATING = "mdi:radiator"
 
 BINARY_SENSORS = [
     CONF_CHARGING,
     CONF_DISCHARGING,
     CONF_BALANCING,
     CONF_ONLINE_STATUS,
+    CONF_HEATING,
 ]
 
-CONFIG_SCHEMA = cv.Schema(
+CONFIG_SCHEMA = JK_BMS_BLE_COMPONENT_SCHEMA.extend(
     {
-        cv.GenerateID(CONF_JK_BMS_BLE_ID): cv.use_id(JkBmsBle),
         cv.Optional(CONF_CHARGING): binary_sensor.binary_sensor_schema(
             icon=ICON_CHARGING
         ),
@@ -35,6 +35,9 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Optional(CONF_BALANCING): binary_sensor.binary_sensor_schema(
             icon=ICON_BALANCING
+        ),
+        cv.Optional(CONF_HEATING): binary_sensor.binary_sensor_schema(
+            icon=ICON_HEATING
         ),
         cv.Optional(CONF_ONLINE_STATUS): binary_sensor.binary_sensor_schema(
             device_class=DEVICE_CLASS_CONNECTIVITY,

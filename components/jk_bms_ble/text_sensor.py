@@ -3,11 +3,11 @@ from esphome.components import text_sensor
 import esphome.config_validation as cv
 from esphome.const import CONF_ICON, CONF_ID, ICON_TIMELAPSE
 
-from . import CONF_JK_BMS_BLE_ID, JkBmsBle
+from . import CONF_JK_BMS_BLE_ID, JK_BMS_BLE_COMPONENT_SCHEMA
 
 DEPENDENCIES = ["jk_bms_ble"]
 
-CODEOWNERS = ["@syssi"]
+CODEOWNERS = ["@syssi", "@txubelaxu"]
 
 CONF_ERRORS = "errors"
 CONF_OPERATION_STATUS = "operation_status"
@@ -22,9 +22,8 @@ TEXT_SENSORS = [
     CONF_TOTAL_RUNTIME_FORMATTED,
 ]
 
-CONFIG_SCHEMA = cv.Schema(
+CONFIG_SCHEMA = JK_BMS_BLE_COMPONENT_SCHEMA.extend(
     {
-        cv.GenerateID(CONF_JK_BMS_BLE_ID): cv.use_id(JkBmsBle),
         cv.Optional(CONF_ERRORS): text_sensor.TEXT_SENSOR_SCHEMA.extend(
             {
                 cv.GenerateID(): cv.declare_id(text_sensor.TextSensor),
